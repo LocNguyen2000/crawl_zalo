@@ -8,5 +8,6 @@
 ### 2. Run file
 - `pip install -r requirements.txt`
 - run `send.py` + `receive.py`
-### 3. Future Code
+### 3. Flow Chart
+![Flow Chart](https://github.com/LocNguyen2000/crawl_zalo/blob/master/future_code.png)
 
