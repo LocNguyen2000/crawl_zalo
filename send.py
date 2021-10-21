@@ -35,7 +35,7 @@ def send_to_queue(_channel, _queue, _file):
     print(" [x] Sent data to RabbitMQ")
 
 
-# send_to_queue(_channel=channel, _queue=PHONE_QUEUE, _file=phone_file)
+send_to_queue(_channel=channel, _queue=PHONE_QUEUE, _file=phone_file)
 send_to_queue(_channel=channel, _queue=PROXY_QUEUE, _file=proxy_file)
 
 connection.close()

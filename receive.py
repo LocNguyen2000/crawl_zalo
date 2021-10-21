@@ -6,10 +6,11 @@
 import json
 import pika
 import sys
+import threading
+import time
+from bs4 import BeautifulSoup
 import requests
 from requests.exceptions import ProxyError, ConnectionError, Timeout
-
-from bs4 import BeautifulSoup
 
 PROXY_QUEUE = 'proxy'
 PHONE_QUEUE = 'phone'
@@ -34,16 +35,16 @@ def transform_proxy(message):
 # => chuyển sđt
 
 # proxy, connection, timeout,  html
-def get_info(proxies, phone, domain):
+def get_info(thread, proxies, phone, domain):
     url = domain + str(phone)
 
-    print('[Crawl] proxy:', proxies.get('http'))
-    print('[Crawl] phone:', phone)
+    print('[Crawl] {} proxy:'.format(thread), proxies.get('http'))
+    print('[Crawl] {} phone:'.format(thread), phone)
     page = requests.get(url, proxies=proxies, timeout=30)
     soup = BeautifulSoup(page.content, 'html.parser')
     username = soup.find("h3")
 
-    print('[Crawl] get:', username.text)
+    print('[Crawl] {} get:'.format(thread), username.text)
 
 
 def consume_queue(channel, queue):
@@ -59,7 +60,7 @@ def consume_queue(channel, queue):
     return data
 
 
-def main():
+def main(thread_index):
     credentials = pika.PlainCredentials('guest', 'guest')
     parameters = pika.ConnectionParameters('localhost', 5672, '/', credentials)
     connection = pika.BlockingConnection(parameters)
@@ -83,16 +84,16 @@ def main():
             request_error = False
 
         try:
-            get_info(proxies=proxies, phone=phone_number, domain=DOMAIN)
+            get_info(thread=thread_index, proxies=proxies, phone=phone_number, domain=DOMAIN)
             request_count += 1
-            print('[Crawl] success')
+            print('[Crawl] {} success'.format(thread_index))
         except (ProxyError, ConnectionError, Timeout) as e:
-            print('[Error] proxy', proxies.get('http'), 'need to change')
+            print('[Error] {} proxy'.format(thread_index), proxies.get('http'), 'need to change')
             proxies = transform_proxy(consume_queue(proxy_channel, PROXY_QUEUE))
             request_error = True
             request_count = 0
         except AttributeError as e:
-            print('[Error] phone not exist || proxy block')
+            print('[Error] {} phone not exist || proxy block'.format(thread_index))
 
         if request_count == max_request:
             proxies = transform_proxy(consume_queue(proxy_channel, PROXY_QUEUE))
@@ -102,7 +103,14 @@ def main():
 
 if __name__ == '__main__':
     try:
-        main()
+        threads = []
+        num_thread = 2
+        for index in range(num_thread):
+            thread = threading.Thread(target=main, args=(index,))
+            thread.start()
+            threads.append(thread)
+        for i in range(num_thread):
+            threads[i].join()
     except KeyboardInterrupt:
         print('Interrupted')
         sys.exit(0)
