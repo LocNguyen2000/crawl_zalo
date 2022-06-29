@@ -7,8 +7,6 @@ import os
 PROXY_QUEUE = 'proxy'
 PHONE_QUEUE = 'phone'
 
-# credentials = pika.PlainCredentials('admin', 'kFzTwTyEr5ZTMKYa')
-# parameters = pika.ConnectionParameters('103.3.245.122', 5672, '/', credentials)
 credentials = pika.PlainCredentials('guest', 'guest')
 parameters = pika.ConnectionParameters('localhost', 5672, '/', credentials)
 
